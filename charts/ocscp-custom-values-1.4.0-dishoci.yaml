@@ -1,0 +1,337 @@
+global:
+  domain: svc.cluster.local
+  clusterDomain: cluster.local
+  # If you want to assign a load balancer IP,set loadbalanceripenbled flag to true and
+  # provide value for flag loadbalancerip
+  # else a random IP will be assigned if loadbalanceripenbled is false
+  # and it will not use loadbalancerip flag
+  publicSignalingIPSpecified: true
+  publicSignalingIP: ${access_endpoint}
+  publicSignalingPort: 31002
+  adminport: 8001
+  #user need to set imageRepository to the repository where the images are kept. 
+  imageRepository: iad.ocir.io/idii16okzgch/ocscp
+  
+  scpInfo:
+    fqdn: scp-worker.ocscp.svc.cluster.local
+    nfType: CUSTOM_ORACLE_SCP
+    locality: Central1 # Locality of SCP where its deployed.
+    mediation_status: DISABLED
+    customInfo:
+      mateScpInfo:
+        capacity: 500
+        priority: 1
+        mateSCPLocalities:
+        - Central2
+      servingLocalities:
+      - Central1
+      - Central2
+      - East1
+      - East2
+      - West1
+      - West2
+      remainingLocalities:
+      - Loc7
+      - Loc8
+    nfInstanceId: 6faf1bbc-6e4a-4454-a507-a14ef8e1bc5e # Sample value. User needs to update this nfInstanceId per his network
+    nfServices:
+    - serviceInstanceId: f86b54b7-aef9-4c78-b346-3bfb7f380812
+      serviceName: nmediation-http
+      fqdn: mediation-server.ocscp.svc.cluster.local
+      port: '80' # Default value is 80
+      scheme: http
+      priority: 0 # Default value is 0
+      capacity: 100 # Default value is 100
+      load: 0
+      nfServiceStatus: REGISTERED
+      ipEndPoints: 
+      - ipv4Address: 1.1.1.1
+        port: '80'
+      apiPrefix:
+      versions:
+      - apiFullVersion: 1.0.0
+        apiVersionInUri: v1
+    - serviceInstanceId: f86b54b7-aef9-4c78-b346-3bfb7f380813
+      serviceName: ocscp-sds
+      fqdn: ocscp-sds.ocscp.svc.cluster.local # FQDN must be same as serviceName
+      port: '80' # Default value is 80
+      scheme: http
+      nfServiceStatus: REGISTERED
+      versions:
+      - apiFullVersion: 1.0.0
+        apiVersionInUri: v1
+
+# NRF profiles for primary(Priority=0) and secondry(Priority=1) NRF. Note that these NRFs needs to be backend DB Synced.
+# For Secondary NRF profile always make it priority lesser than First priority NRF, currently we set secondary NRF priority to 1.
+# In case of no secondry NRF user can comment the secondary NRF Profile
+  nrfProfiles:
+  - capacity: 100
+    locality: West1
+    nfInstanceId: 6faf1bbc-6e4a-4454-a507-a14ef8e1bc5c
+    nfStatus: REGISTERED
+    nfType: NRF
+    priority: '0'
+    nfServices:
+    - capacity: 100
+      #apiPrefix: USEast
+      fqdn: ocnrf-endpoint.ocnrf.svc.cluster.local
+      ipEndPoints: [{"ipv4Address": "${access_endpoint}", "port": "31001"}]
+      load: 0
+      nfServiceStatus: REGISTERED
+      scheme: http
+      serviceInstanceId: fe137ab7-740a-46ee-aa5c-951806d77b01
+      serviceName: nnrf-nfm
+      priority: 0
+      versions:
+      - apiFullVersion: 1.0.0
+        apiVersionInUri: v1
+
+    - capacity: 100
+      #apiPrefix: USEast
+      fqdn: ocnrf-endpoint.ocnrf.svc.cluster.local
+      ipEndPoints: [{"ipv4Address": "${access_endpoint}", "port": "31001"}]
+      load: 0
+      nfServiceStatus: REGISTERED
+      scheme: http
+      serviceInstanceId: fe137ab7-740a-46ee-aa5c-951806d77b02
+      serviceName: nnrf-disc
+      priority: 0
+      versions:
+      - apiFullVersion: 1.0.0
+        apiVersionInUri: v1
+
+  # Audit NF List for which audit discovery needs to be triggered. If list is not provided or empty all valid NFs will be considered. 
+  # NFs not part of nrfDetails will be ignored with warning.
+  auditNFList:
+    - AUSF
+    - UDM
+
+  # SCP locality info, required for updating IP endpoint and fqdn
+  # in nf-profile received in response from NRF
+  scplocalityconfig:
+    mapping_param: LOCALITY # can be one of [LOCALITY, NFINSTANCEID, FQDN]
+    mapping_info:
+    - id_value: "Central1"
+      ip_v4_address: "1.2.3.4"
+      fqdn: "udm1.com"
+      port: 8080
+    - id_value: "Central2"
+      ip_v4_address: "2.3.4.5"
+      fqdn: "udm2.com"
+      port: "8080"
+  # Subscription NF List is for which NFTypes subscription needs to be triggered. If list is not provided or empty all valid NFs will be considered. 
+  subscriptionNFList:
+    - AUSF
+    - UDM
+
+  # This port will be used for scp-worker listening for probing.          
+  PROBING_LISTENER_PORT: 8002
+
+  # This port will be used for scp-worker listening for signalling
+  SIGNALLING_LISTENER_PORT: 8080
+     
+scpc-soothsayer:
+   # registerScpWithNrf flag allows to specify whether user wants to start SCP registration with NRF.
+   # subscriptionInterval flag is now renamed to retryInterval.
+  subscription:
+    imageDetails:
+      image: soothsayer-subscription
+      tag: 1.4.0
+    resources:
+      memory: 1Gi
+      cpu: 0.5
+    serviceName: scpc-subscription
+    # Configure time interval in seconds to run Subscription and registration process. Value should be valid integer
+    retryInterval: 120
+    logLevel: trace
+    registerScpWithNrf: true
+    # Uncomment the below block to use node selector
+    #nodeSelector:
+    #  nodeKey: ocscp
+    #  nodeValue: scpc-subscription
+
+  notification:
+    imageDetails:
+      image: soothsayer-notification
+      tag: 1.4.0
+    resources:
+      memory: 4Gi
+      cpu: 3
+    serviceName: scpc-notification
+    logLevel: trace
+    # Uncomment the below block to use node selector
+    #nodeSelector:
+    #  nodeKey: ocscp
+    #  nodeValue: scpc-notification
+
+  audit:
+    imageDetails:
+      image: soothsayer-audit
+      tag: 1.4.0
+    resources:
+      memory: 1Gi
+      cpu: 1
+    serviceName: scpc-audit
+    # Configure time interval in seconds to run Audit. Value should be valid integer
+    auditInterval: 120
+    # Configure audit initial delay interval, values are given in seconds. Audit will keep on retrying for provided interval till success received from NRF. 
+    auditInitialRetryInterval: 60
+    logLevel: trace
+    # Uncomment the below block to use node selector
+    #nodeSelector:
+    #  nodeKey: ocscp
+    #  nodeValue: scpc-audit
+
+  configuration:
+    imageDetails:
+      image: soothsayer-configuration
+      tag: 1.4.0
+    resources:
+      memory: 1Gi
+      cpu: 0.5
+    serviceName: scpc-configuration
+    logLevel: trace
+    # Uncomment the below block to use node selector
+    #nodeSelector:
+    #  nodeKey: ocscp
+    #  nodeValue: scpc-configuration
+
+# This flag when set to True will consider NFs in SCP's locality if no locality information is present during their NF registration. 
+  defaultLocalityToScp: true
+ 
+# Configure Serviceto get profile from NRF. Possible values are 1. nnrf-nfm 2. nnrf-disc . User must have to use nnrf-nfm if interplmnfqdn is part of profile
+  nrfServiceForAudit: nnrf-disc
+
+# Configure reverseProxyEnabled at soothsayer level. Possible values can be either true or false. 
+  reverseProxyEnabled: true
+
+  configService:
+    # If you want to assign a load balancer IP,set loadbalanceripenbled flag to true and
+    # provide value for flag loadbalancerip
+    # else a random IP will be assigned if loadbalanceripenbled is false
+    # and it will not use loadbalancerip flag
+    publicConfigIPSpecified: false
+    publicConfigIP: 10.75.177.72    
+    
+    # If you want to provide a static nodePort, make staticnodeportenabled flag to true and
+    # provide value for flag nodeport ,
+    # else a random nodePort will be assigned if staticnodeportenabled is false
+    # and it will not use nodeport flag
+    staticnodeportenabled: false
+    # Port value should lie in between 30000-32767.
+    nodeport: 31502
+    
+    # IP Address Pool from which should K8s config Service pick the IP Address
+    configServiceNetworkNameEnabled: false
+    configServiceNetworkName: "metallb.universe.tf/address-pool: oam"
+
+  # merge NFServices within a NFProfile based on equivalence criteria of
+  # 'apiRoot' i.e. scheme, fqdn, apiPrefix, serviceName, apiVersion and 
+  # other routing parameters like 'capacity' and 'priority' must be same.
+  mergeNFServices:
+    # status of feature, possible values can be 'true' or 'false'.
+    status: false
+    # supported list of NFServices.
+    supportedNFServices: ["nudm-uecm", "nudm-sdm", "nudm-ueau", "nudm-ee", "nudm-pp"]
+
+scp-worker:
+  imageDetails:
+    image: scp-worker
+    tag: 1.4.0
+  jaeger:
+    address: o5g-utils-jaeger-collector.occne-infra.svc.cluster.local
+    port_value: 9411
+  # This flag tracingenable is used to enable or disable jaeger tracing
+  tracingenable: true
+  admin:
+    enablejaegerbody: true
+    retrytimeoutvalue: 5
+  service:
+    port:
+#     If you want to provide a static nodePort, make staticnodeportenabled flag to true and
+#     provide value for flag nodeport ,
+#     else a random nodePort will be assigned if staticnodeportenabled is false
+#     and it will not use nodeport flag
+      staticnodeportenabled: true # false (workaround)
+      nodeport: 31002
+    
+    # IP Address Pool from which should K8s scp-worker Service pick the IP Address
+    networkNameEnabled: false
+    networkName: "metallb.universe.tf/address-pool: signaling1"
+    
+  loglevel: trace
+
+  prometheus:
+    scrape: true
+
+  resources:
+    memory: 8Gi # also update 'heapoverloadcontrol.resource_monitors.max_heap_size_bytes'
+    cpu: 4
+
+  minreplicas: 1
+  maxreplicas: 32
+  targetcpuutilpercent: 10
+
+  # Uncomment the below block to use node selector
+  #nodeSelector:
+  #  nodeKey: ocscp
+  #  nodeValue: scp-worker
+
+  heapoverloadcontrol:
+    refresh_interval:
+      seconds: 0
+      nanos: 250000000
+    resource_monitors:
+      max_heap_size_bytes: 8589934592 #8192Mi
+      #Max heap size is 8GB. The values below are expressed as a fraction of the Max Heap Size
+    actions:
+      stop_accepting_requests: 0.70 #as fraction of max heap size
+      stop_accepting_connections: 0.75 #as fraction of max heap size
+      shrink_heap: 0.50 # as fraction of max heap size (min of all other threshold values)
+
+scpc-pilot:
+  imageDetails:
+    image: scpc-pilot
+    tag: 1.4.0
+  enableTracing: true
+  minreplicas: 1
+  maxreplicas: 1
+  targetcpuutilpercent: 50
+  # To set Pilot Log level, by default it is set to info 
+  logOutputLevel: "default:info"
+  # To set Pilot Log Stack Trace Level,by default is set to none
+  logStacktraceLevel: "default:none"
+  #Set the sampling rate for Istio to use for tracing.
+  traceSampling: 100
+  # Uncomment the below block to use node selector
+  #nodeSelector:
+  #  nodeKey: ocscp
+  #  nodeValue: scpc-pilot
+
+scp-apps:
+  dbApp:
+    imageDetails:
+      image: scp-db-app
+      tag: 1.4.0
+    dbServiceEndpoint:
+      primary:
+        host: "o5g-mysql.occne-infra.svc.cluster.local"
+        port: "3306"
+      secondary:
+        host: "o5g-mysql.occne-infra.svc.cluster.local"
+        port: "3306"
+    dbUsername: "scpusr"
+    dbPassword: "scppasswd"
+    dbName: "scpdb"
+    poolSize: "10"
+    logLevel: "trace"
+    resources:
+      memory: 2Gi
+      cpu: 4
+    minreplicas: 1
+    maxreplicas: 32
+    targetcpuutilpercent: 75
+    # Uncomment the below block to use node selector
+    #nodeSelector:
+    #  nodeKey: ocscp
+    #  nodeValue: scp-apps

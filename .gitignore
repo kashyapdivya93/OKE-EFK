@@ -1,0 +1,18 @@
+.DS_Store
+*.tgz
+*.zip
+kubeconfig
+generated/
+
+#  Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# .tfvars files
+*.tfvars
+
+# tf crash log
+crash.log

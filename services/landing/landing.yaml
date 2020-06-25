@@ -1,0 +1,85 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: o5g-langingpage
+  labels:
+    name: o5g-langingpage
+    layer: client
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: o5g-langingpage
+        layer: client
+    spec:
+      containers:
+      - name: o5g-langingpage
+        image: nginx
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        volumeMounts:
+        - mountPath: /var/cache/nginx
+          name: tmp-volume
+        - name: landingpage-volume
+          mountPath: /usr/share/nginx/html
+        - name: landingpagelogos-volume
+          mountPath: /usr/share/nginx/html/logos
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            medium: Memory
+        - name: landingpage-volume
+          configMap:
+            name: landingpage
+        - name: landingpagelogos-volume
+          configMap:
+            name: landingpagelogos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: o5g-langingpage
+  labels:
+    name: o5g-langingpage
+    layer: client
+spec:
+  selector:
+    name: o5g-langingpage
+    layer: client
+  ports:
+  - port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: oracle-5g-landingpage
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: o5g-langingpage
+          servicePort: 80

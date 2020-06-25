@@ -1,0 +1,470 @@
+# Copyright 2019 (C), Oracle and/or its affiliates. All rights reserved.
+
+# helm install -f values.yaml --name ocnrf ocnrf
+#########################################################
+#            Section Start: global attributes           #   
+#########################################################
+global:
+  # OCNRF Deployment Name
+  nrfName: "default-ocnrf"
+  # MYSQL configurable params
+  mysql:
+    primary:
+      # Primary MYSQL Host IP or Hostname
+      host: "o5g-mysql.occne-infra"
+    secondary:
+      # Secondary MYSQL Host IP or Hostname
+      host: "o5g-mysql.occne-infra"
+    # MSQL Database for OCNRF
+    database: "nrfdb"
+    # Port of MYSQL Database
+    port: 3306
+    # OCNRF MYSQL UserName
+    username: "nrfusr"
+    # OCNRF MYSQL Password
+    password: "nrfpasswd"
+    
+  # OCNRF END Point Name and Port. This value is used in UriList of NfListRetrival Service Operation response.
+  # The endpoint needs to be OCNRF's External Routable FQDN  (e.g. ocnrf.oracle.com) 
+  # OR External Routable IpAddress (e.g. 10.75.212.60)
+  # OR for routing with in the same K8 cluster use full NRF API-Gateway's Service FQDN as below format
+  # <helm-release-name>-endpoint.<namespace>.svc.<cluster-domain-name>
+  # e.g ocnrf-endpoint.nrf-1.svc.cluster.local
+  # where 
+  #   "ocnrf": is the helm release name (deployment name that will be used during "helm install")
+  #   "nrf-1": is the namespace in which NRF will be deployed
+  #   "cluster.local": is the K8's dnsDomain name 
+  #   (dnsDomain can be found using "kubectl -n kube-system get configmap kubeadm-config -o yaml | grep -i dnsDomain")
+  endpoint: "ocnrf-endpoint.ocnrf.svc.cluster.local"
+  endpointPort: 80
+  # enable 15.3 feature
+  enableF3: false
+  # OCNRF Instance ID
+  nrfInstanceId: 6faf1bbc-6e4a-4454-a507-a14ef8e1bc5c
+  registry: iad.ocir.io/idii16okzgch/ocnrf
+
+#########################################################
+#            Section End  : global attributes           #   
+#########################################################
+
+
+#########################################################
+#            Section Start: api-gateway attributes      #
+#########################################################
+api-gateway:
+  # enable Jaeger tracing
+  jaegerTracingEnabled: true
+  openTracing :
+    jaeger:
+      udpSender:
+        # udpsender host
+        host: "o5g-utils-jaeger-agent.occne-infra"
+        # udpsender port
+        port: 6831
+      # Jaeger message sampler. Value range: 0 to 1
+      # e.g. Value 0: No Trace will be sent to Jaeger collector
+      # e.g. Value 0.3: 30% of message will be sampled and will be sent  to Jaeger collector
+      # e.g. Value 1: 100% of message (i.e. all the messages) will be sampled and will be sent to Jaeger collector
+      probabilisticSampler: 1
+  image:
+    # image name
+    name: apigateway
+    # tag name of image
+    tag: 1.1.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+
+  initContainersImage:
+    # init Containers image name
+    name: configurationinit
+    # tag name of init Container image
+    tag: 0.1.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  
+  updateContainersImage:
+    # update Containers image name
+    name: configurationupdate
+    # tag name of update Container image
+    tag: 0.1.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+
+  service:
+    # Enable or disable IP Address allocation from Metallb Pool
+    metalLbIpAllocationEnabled: false
+    # Address Pool Annotation for Metallb
+    metalLbIpAllocationAnnotation: "metallb.universe.tf/address-pool: signaling1"
+    
+    # If Static load balancer IP needs to be set, then set staticIpAddressEnabled flag to true and provide value for staticIpAddress
+    # Else random IP will be assigned by the metalLB from its IP Pool
+    staticIpAddressEnabled: false
+    staticIpAddress: 10.101.5.1
+
+    # If Static node port needs to be set, then set staticNodePortEnabled flag to true and provide value for staticNodePort
+    # Else random node port will be assigned by K8
+    # If httpsEnabled is false, this Port would be used as static HTTP/2.0 Node Port (unsecured) 
+    # If httpsEnabled is true, this Port would be used as static HTTPS/2.0 Node Port (secured SSL)     
+    staticNodePortEnabled: true
+    staticNodePort: 31001
+  
+    # port on which NRF's API-Gateway service is exposed
+    # If httpsEnabled is false, this Port would be HTTP/2.0 Port (unsecured) 
+    # If httpsEnabled is true, this Port would be HTTPS/2.0 Port (secured SSL) 
+    publicSignalingPort: 80
+    # Input to enable/disable HTTPS (SSL, TLS1.2)
+    httpsEnabled: false
+    # Input for SSL related infrastructure. The below parameters will be used only if httpsEnabled is true
+    ssl:
+      # Supported Cipher list
+      # Possible values - ("," separated).
+      # TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 (default)
+      # TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+      # TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+      # TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      supportedCipherSuiteList: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 
+      
+      # OCNRF private key details for HTTPS
+      # Secret Name, Namespace, Keydetails
+      privateKey:
+        k8SecretName: ssl-privatekey-secret
+        k8NameSpace: ocnrf
+        rsa:
+          fileName: rsa_ssl_private_key_pkcs1.pem
+        ecdsa:
+          fileName: ec_ssl_private_key_pkcs8.pem
+
+      # OCNRF certificate details for HTTPS
+      # Secret Name, Namespace, Keydetails
+      certificate:
+        k8SecretName: ssl-cert-secret
+        k8NameSpace: ocnrf
+        rsa:
+          fileName: ssl_rsa_certificate.crt
+        ecdsa:
+          fileName: ssl_ecdsa_certificate.crt
+
+      # OCNRF CA details for HTTPS
+      caBundle:
+        k8SecretName: ssl-cabundle-secret
+        k8NameSpace: ocnrf
+        fileName: ssl_cabundle.cer
+
+      # password configured in keyStorePassword are not used at this moment.
+      # password configured in keyStorePass used instead
+      # However it is mandatory to provde the below configuration with a valid 
+      # k8SecretName, k8NameSpace and fileName. Otherwise Pod will not comeup
+      keyStorePassword:
+        k8SecretName: ssl-keystore-secret
+        k8NameSpace: ocnrf
+        fileName: ssl_keystore.txt
+      # Keystore password
+      keyStorePass: "ocnrfpass"
+
+      # password configured in trustStorePassword are not used at this moment.
+      # password configured in trustStorePass used instead
+      # However it is mandatory to provde the below configuration with a valid 
+      # k8SecretName, k8NameSpace and fileName. Otherwise Pod will not comeup.
+      trustStorePassword:
+        k8SecretName: ssl-truststore-secret
+        k8NameSpace: ocnrf
+        fileName: ssl_truststore.txt
+      # Truststore password
+      trustStorePass: "ocnrfpass"
+
+      # Initial Algorithm for HTTPS  
+      # Supported Values: ES256, RSA256
+      initialAlgorithm: ES256
+
+  # resource details
+  resources:
+    limits:
+       # The Container's memory cpu
+       cpu: 1
+       # The Container's memory limit
+       memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+  # Nuber of Pods must always be available, even during a disruption.
+  minAvailable: 1
+  # Min replicas to scale to maintain an average CPU utilization
+  minReplicas: 1
+  # Max replicas to scale to maintain an average CPU utilization
+  maxReplicas: 1
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+#########################################################
+#            Section End  : api-gateway attributes      #
+#########################################################
+
+
+#########################################################
+#            Section Start: nfregistration attributes   #
+#########################################################
+# NRF microservices
+nfregistration:
+  image:
+    # image name
+    name: ocnrf-nfregistration
+    # tag name of image
+    tag: 1.4.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  # Resource details
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+  # Min replicas to scale to maintain an average CPU utilization
+  minReplicas: 1
+  # Max replicas to scale to maintain an average CPU utilization
+  maxReplicas: 1
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+#########################################################
+#            Section End  : nfregistration attributes   #
+#########################################################
+
+
+#########################################################
+#            Section Start: nfsubscription attributes   #
+#########################################################
+nfsubscription:
+  image:
+    # image name
+    name: ocnrf-nfsubscription
+    # tag name of image
+    tag: 1.4.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  # Resource details
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+  # Min replicas to scale to maintain an average CPU utilization
+  minReplicas: 1
+  # Max replicas to scale to maintain an average CPU utilization
+  maxReplicas: 1
+  # http proxy details
+  http: 
+    proxy:
+      host: ${access_endpoint} # scp-worker.ocscp (Workaround)
+      port: 31002
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+
+#########################################################
+#            Section End  : nfsubscription attributes   #
+#########################################################
+
+
+#########################################################
+#            Section Start: nrfauditor attributes       #
+#########################################################
+nrfauditor:
+  image:
+    # image name
+    name: ocnrf-nrfauditor
+    # tag name of image
+    tag: 1.4.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 256Mi
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+#########################################################
+#            Section End  : nrfauditor attributes       #
+#########################################################
+
+
+#########################################################
+#            Section Start: nfdiscovery attributes      #
+#########################################################
+nfdiscovery:
+  image:
+    # image name
+    name: ocnrf-nfdiscovery
+    # tag name of image
+    tag: 1.4.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  # Resource details
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+  # Min replicas to scale to maintain an average CPU utilization
+  minReplicas: 1
+  # Max replicas to scale to maintain an average CPU utilization
+  maxReplicas: 1
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+
+#########################################################
+#            Section End  : nfdiscovery attributes      #
+#########################################################
+
+
+#########################################################
+#            Section Start: nrfconfiguration attributes #
+#########################################################
+nrfconfiguration:
+  image:
+    # image name
+    name: ocnrf-nrfconfiguration
+    # tag name of image
+    tag: 1.4.0
+    # Pull Policy - Possible Values are:- Always, IfNotPresent, Never
+    pullPolicy: Always
+  service:
+    # Enable or disable IP Address allocation from Metallb Pool
+    metalLbIpAllocationEnabled: false
+    # Address Pool Annotation for Metallb
+    metalLbIpAllocationAnnotation: "metallb.universe.tf/address-pool: oam"
+    # If Static load balancer IP needs to be set, then set staticIpAddressEnabled flag to true and provide value for staticIpAddress
+    # Else random IP will be assigned by the metalLB from its IP Pool
+    staticIpAddressEnabled: false
+    staticIpAddress: 10.75.177.71
+    # If Static node port needs to be set, then set staticNodePortEnabled flag to true and provide value for staticNodePort
+    # Else random node port will be assigned by K8
+    staticNodePortEnabled: false
+    staticNodePort: 31501
+  # Resource details
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+  # Min replicas to scale to maintain an average CPU utilization
+  minReplicas: 1
+  # Max replicas to scale to maintain an average CPU utilization
+  maxReplicas: 1
+#########################################################
+#            Section End  : nrfconfiguration attributes #
+#########################################################
+
+
+#########################################################
+#            Section Start: nfaccesstoken attributes    #
+#########################################################
+# Details of NF Access Token Microservice
+nfaccesstoken:
+  # Flag to disable Oauth functionality 
+  enabled: false
+  # Image Details
+  image:
+    name: ocnrf-nfaccesstoken
+    tag: 1.4.0
+    pullPolicy: Always
+
+  # Image details for Access token Key certificate infrastucture
+  initContainersImage:
+    name: configurationinit
+    tag: 0.1.0
+    pullPolicy: Always
+  
+  updateContainersImage:
+    name: configurationupdate
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+  # Access token key certificate infrastucture details
+  oauth:
+    # OCNRF Private key details
+    privateKey:
+      # K8 Secret Name for OCNRF Private key 
+      k8SecretName: ocnrfaccesstoken-secret
+      # Namespace for OCNRF Private key
+      k8NameSpace: ocnrf
+      # Different key file names
+      rsa:
+        fileName: rsa_private_key.pem
+      ecdsa:
+        fileName: ecdsa_private_key.pem
+    # OCNRF certificate
+    certificate:
+      # K8 Secret Name for OCNRF certificate
+      k8SecretName: ocnrfaccesstoken-secret
+      # Namespace for OCNRF certificate
+      k8NameSpace: ocnrf
+      # OCNRF certificates
+      rsa:
+        fileName: rsa_certificate.crt
+      ecdsa:
+        fileName: ecdsa_certificate.crt
+    # Keystore password configuration from Secret
+    keyStorePassword:
+      # K8 Secret Name for keystore password
+      k8SecretName: ocnrfaccesstoken-secret
+      # Namespace secret Name for keystore password
+      k8NameSpace: ocnrf
+      # KeyStore password file
+      fileName: keystore_password.txt
+    # Initial Algorithm for Access Token key certificate infrastucture
+    # Supported Values: ES256, RSA256
+    initialAlgorithm: ES256
+  log:
+    # setting logging level
+    # Possible values - OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL
+    level: INFO
+
+  minReplicas: 1
+  maxReplicas: 1
+
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+    target:
+      averageCpuUtil: 80
+
+#########################################################
+#            Section End  : nfaccesstoken attributes    #
+#########################################################
+

@@ -1,0 +1,74 @@
+# https://github.com/helm/charts/blob/master/stable/metrics-server/README.md
+metrics-server:
+  enabled: true
+  args: [
+    # not recommended in production
+    --kubelet-insecure-tls,
+    --kubelet-preferred-address-types=InternalIP
+  ]
+
+# https://github.com/helm/charts/blob/master/stable/prometheus/README.md
+prometheus:
+  enabled: true
+
+# https://github.com/helm/charts/blob/master/stable/grafana/README.md
+grafana:
+  enabled: true
+  plugins: [ 'oci-datasource' ]
+  sidecar:
+    datasources:
+      enabled: true
+      label: grafana_datasource
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/dashboards"
+  dashboards:
+    default:
+      cluster-metrics:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
+      pods:
+        gnetId: 6336
+        revision: 1
+        datasource: Prometheus
+  persistence:
+    enabled: true
+
+# https://github.com/helm/charts/blob/master/stable/nginx-ingress/README.md
+nginx-ingress:
+  enabled: true
+
+# # https://github.com/helm/charts/blob/master/incubator/jaeger/README.md
+# # DEPRECATED
+# jaeger:
+#   enabled: true
+#   elasticsearch:
+#     config:
+#       host: o5g-efk-elasticsearch-logging:9200
+#   tags:
+#     cassandra: false
+#     elasticsearch: false
+#   spec:
+#     strategy: production
+#     storage:
+#       type: elasticsearch
+#       options:
+#         es:
+#           server-urls: o5g-efk-elasticsearch-logging:9200
+
+# Using new from:
+# https://github.com/jaegertracing/helm-charts/blob/master/charts/jaeger/README.md
+# Deploying separated.
+
+# https://github.com/helm/charts/blob/master/stable/metallb/README.md
+metallb:
+  enabled: true
+
+# https://github.com/jetstack/cert-manager/blob/master/README.md
+cert-manager:
+  enabled: true
+  installCRDs: true

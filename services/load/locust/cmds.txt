@@ -1,0 +1,5 @@
+docker run -p 8089:8089 --volume $PWD/locustfile.py:/mnt/locust/locustfile.py -e LOCUSTFILE_PATH=/mnt/locust/locustfile.py -e TARGET_URL=http://129.213.18.168 locustio/locust
+
+scp-worker.ocscp.svc.cluster.local
+
+helm install -n occne-infra --set master.config.target-host=http://scp-worker.ocscp.svc.cluster.local stable/locust

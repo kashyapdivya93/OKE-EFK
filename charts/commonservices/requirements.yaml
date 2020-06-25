@@ -1,0 +1,36 @@
+dependencies:
+  # Prometheus
+  - name: prometheus
+    version: 11.1.2 # 8.14.3
+    condition: prometheus.enabled
+    repository: https://kubernetes-charts.storage.googleapis.com
+  # Grafana
+  - name: grafana
+    version: 5.0.13 # 3.3.8
+    condition: grafana.enabled
+    repository: https://kubernetes-charts.storage.googleapis.com
+  # HPA Metrics
+  - name: metrics-server
+    version: 2.11.1 # 2.5.1
+    condition: metrics-server.enabled
+    repository: https://kubernetes-charts.storage.googleapis.com
+  # Ingress Controller
+  - name: nginx-ingress
+    version: 1.36.3
+    condition: nginx-ingress.enabled
+    repository: https://kubernetes-charts.storage.googleapis.com
+  # # Jaeger
+  # - name: jaegertracing/jaeger
+  #   version: 0.27.2 # 0.8.3
+  #   condition: jaeger.enabled
+  #   repository: https://jaegertracing.github.io/helm-charts # https://kubernetes-charts-incubator.storage.googleapis.com
+  # metallb
+  - name: metallb
+    version: 0.9.7
+    condition: metallb.enabled
+    repository: https://kubernetes-charts.storage.googleapis.com
+  # cert-manager
+  - name: cert-manager
+    version: 0.15.0-alpha.0
+    condition: cert-manager.enabled
+    repository: https://charts.jetstack.io

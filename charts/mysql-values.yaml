@@ -1,0 +1,13 @@
+initializationFiles:
+  nrf.sql: |-
+    CREATE USER 'nrfusr'@'%' IDENTIFIED BY 'nrfpasswd';
+    DROP DATABASE if exists nrfdb;
+    CREATE DATABASE nrfdb CHARACTER SET utf8;
+    GRANT SELECT, INSERT, CREATE, ALTER, DROP, LOCK TABLES, CREATE TEMPORARY TABLES, DELETE, UPDATE, EXECUTE ON nrfdb.* TO 'nrfusr'@'%';
+    USE nrfdb;
+  scp.sql: |-
+    CREATE USER 'scpusr'@'%' IDENTIFIED BY 'scppasswd';
+    DROP DATABASE if exists scpdb;
+    CREATE DATABASE scpdb;
+    GRANT SELECT, INSERT, CREATE, ALTER, DROP, LOCK TABLES, CREATE TEMPORARY TABLES, DELETE, UPDATE, EXECUTE ON scpdb.* TO 'scpusr'@'%';
+    use scpdb;

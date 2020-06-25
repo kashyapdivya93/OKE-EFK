@@ -1,0 +1,2 @@
+GET http://150.136.125.170:31002/nnrf-nfm/v1/nf-instances
+GET http://150.136.125.170:31002/nnrf-nfm/v1/nf-instances/6faf1bbc-6e4a-4454-a507-a14ef8e1bc5e

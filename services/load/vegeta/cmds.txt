@@ -1,0 +1,14 @@
+Original: 
+
+vegeta-noproxy attack -duration=120s -h2c -rate=100 -targets=GET_target_nfinstances.txt | tee results.bin | vegeta-noproxy report
+
+---
+Docker: 
+
+docker run --rm -i peterevans/vegeta sh -c \
+"echo 'GET http://150.136.120.62:31002/nnrf-nfm/v1/nf-instances' >> target.list && echo 'GET http://150.136.120.62:31002/nnrf-nfm/v1/nf-instances/6faf1bbc-6e4a-4454-a507-a14ef8e1bc5e' >> target.list && vegeta attack -duration=120s -h2c -rate=100 -targets=target.list | tee results.bin | vegeta report"
+
+---
+Deployer:
+
+bash -c "echo 'GET http://10.96.149.74:8001/nnrf-nfm/v1/nf-instances' >> target.list && echo 'GET http://129.213.18.168:31002/nnrf-nfm/v1/nf-instances/6faf1bbc-6e4a-4454-a507-a14ef8e1bc5e' >> target.list && vegeta attack -duration=120s -h2c -rate=100 -targets=target.list | tee results.bin | vegeta report"

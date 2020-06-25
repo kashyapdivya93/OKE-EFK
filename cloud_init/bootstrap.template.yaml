@@ -1,0 +1,84 @@
+#cloud-config
+
+write_files:
+# setup script
+  - path: "/root/setup.preflight.sh"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${setup_preflight_sh_content}
+  - path: "/root/setup.sh"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${setup_template_sh_content}
+  - path: "/root/ociconfig"
+    permissions: "0600"
+    encoding: "gzip+base64"
+    content: |
+      ${ociconfig_template_content}
+  - path: "/root/deploy.sh"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${deploy_template_content}
+  - path: "/root/commonservices/values.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_values_template_content}
+  - path: "/root/commonservices/requirements.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_requirements_content}
+  - path: "/root/commonservices/Chart.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_chart_content} 
+  - path: "/root/commonservices/templates/_helpers.tpl"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_templates_helpers_content}
+  - path: "/root/commonservices/templates/NOTES.txt"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_templates_notes_content}
+  - path: "/root/commonservices/templates/o5g-grafana-datasources.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_templates_o5g_grafana_datasources_content}
+  - path: "/root/o5g-grafana-dashboards.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${commonservices_templates_o5g_grafana_dashboards_content}
+  - path: "/root/mysql-values.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${mysql_values_content}
+  - path: "/root/ocnrf-custom-values-1.4.0-dishoci-min.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${ocnrf_values_content}
+  - path: "/root/ocscp-custom-values-1.4.0-dishoci.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${ocscp_values_content}
+  - path: "/root/o5g-ingress.yaml"
+    permissions: "0777"
+    encoding: "gzip+base64"
+    content: |
+      ${o5g_ingress_content}
+
+runcmd:
+ - echo "Running prep scripts..."
+ - /root/setup.preflight.sh
+ - echo "Finished prep scripts."
