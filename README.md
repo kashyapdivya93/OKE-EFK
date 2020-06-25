@@ -8,8 +8,8 @@ Deploys the whole solution in 15 minutes or less. Including OKE Cluster, Node Po
 ###### (If not using OCI CloudShell, you need to have the terraform, OCI cli and kubectl installed and configured on workstation that will be used)
 
 1. Create a folder for the Terraform scripts: e.g.: `mkdir oke-efk && cd oke-efk`
-1. Get the project: `wget https://objectstorage.us-ashburn-1.oraclecloud.com/p/opCk0GadynldE0TRNZwJl-zk4xECixWUA6m4a3II1QA/n/ociateam/b/repo/o/O5G-v100.zip`
-1. Unzip. e.g.: `unzip O5G-v100.zip`
+1. Get the project: `https://github.com/mrabhiram/OKE-EFK.git`
+1. Unzip. e.g.: `unzip OKE-EFK.zip`
 1. Copy the file `terraform.tfvars.example` to `terraform.tfvars` and update the tenancy_ocid and compartment_ocid variables `cp terraform.tfvars.example terraform.tfvars`
 1. Run the command `terraform init` to init the Terraform and providers
 1. Run the command `terraform apply` to deploy everything.
